@@ -1,9 +1,10 @@
-"""Streaming, source-grounded answering. Retrieval + synthesis run in a threadpool so the
-async SSE endpoint stays responsive; every answer is followed by its citations."""
+"""Streaming, source-grounded answering — scoped to a single project. Retrieval is filtered to
+the project's documents, runs in a threadpool, and every answer is followed by its citations."""
 import json
 from collections.abc import AsyncGenerator
 
 from llama_index.core import PromptTemplate
+from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
 from ..config import get_settings
@@ -29,24 +30,27 @@ def _sse(payload: dict) -> str:
 
 
 async def stream_answer(
-    message: str, top_k: int | None = None
+    project_id: str, message: str, top_k: int | None = None
 ) -> AsyncGenerator[str, None]:
     settings = get_settings()
 
-    if not has_documents():
+    if not has_documents(project_id):
         yield _sse(
             {
                 "type": "token",
-                "text": "No sources have been added yet. Upload a document and "
+                "text": "This project has no sources yet. Add a document and "
                 "I'll answer strictly from it.",
             }
         )
         yield _sse({"type": "done"})
         return
 
+    # Retrieve only from documents that belong to this project.
+    filters = MetadataFilters(filters=[MetadataFilter(key="project_id", value=project_id)])
     query_engine = get_index().as_query_engine(
         streaming=True,
         similarity_top_k=top_k or settings.similarity_top_k,
+        filters=filters,
         text_qa_template=_QA_TEMPLATE,
     )
 

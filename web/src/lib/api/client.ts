@@ -2,7 +2,7 @@
 // never touch `fetch` directly — that's what makes the frontend framework/transport-agnostic.
 
 import { API_BASE } from './config'
-import type { ChatEvent, Citation, DocumentInfo, IngestResponse } from './types'
+import type { ChatEvent, Citation, DocumentInfo, IngestResponse, Project } from './types'
 
 async function toJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -12,14 +12,48 @@ async function toJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export function listDocuments(signal?: AbortSignal): Promise<DocumentInfo[]> {
-  return fetch(`${API_BASE}/documents`, { signal }).then((r) => toJson<DocumentInfo[]>(r))
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
+
+// --- Projects ---
+
+export function listProjects(signal?: AbortSignal): Promise<Project[]> {
+  return fetch(`${API_BASE}/projects`, { signal }).then((r) => toJson<Project[]>(r))
 }
 
-export function uploadDocument(file: File): Promise<IngestResponse> {
+export function createProject(name: string): Promise<Project> {
+  return fetch(`${API_BASE}/projects`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ name }),
+  }).then((r) => toJson<Project>(r))
+}
+
+export function renameProject(id: string, name: string): Promise<Project> {
+  return fetch(`${API_BASE}/projects/${id}`, {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ name }),
+  }).then((r) => toJson<Project>(r))
+}
+
+export function deleteProject(id: string): Promise<{ deleted: string }> {
+  return fetch(`${API_BASE}/projects/${id}`, { method: 'DELETE' }).then((r) =>
+    toJson<{ deleted: string }>(r),
+  )
+}
+
+// --- Documents (scoped to a project) ---
+
+export function listDocuments(projectId: string, signal?: AbortSignal): Promise<DocumentInfo[]> {
+  return fetch(`${API_BASE}/projects/${projectId}/documents`, { signal }).then((r) =>
+    toJson<DocumentInfo[]>(r),
+  )
+}
+
+export function uploadDocument(projectId: string, file: File): Promise<IngestResponse> {
   const body = new FormData()
   body.append('file', file)
-  return fetch(`${API_BASE}/documents`, { method: 'POST', body }).then((r) =>
+  return fetch(`${API_BASE}/projects/${projectId}/documents`, { method: 'POST', body }).then((r) =>
     toJson<IngestResponse>(r),
   )
 }
@@ -30,6 +64,8 @@ export function deleteDocument(docId: string): Promise<{ deleted: string }> {
   )
 }
 
+// --- Chat ---
+
 export interface ChatHandlers {
   onToken?: (text: string) => void
   onSources?: (sources: Citation[]) => void
@@ -37,17 +73,18 @@ export interface ChatHandlers {
   signal?: AbortSignal
 }
 
-// Streams an answer token-by-token, then the citations. Parses the backend's `data: {json}`
-// SSE frames off a plain fetch stream (EventSource can't POST).
+// Streams an answer (scoped to a project) token-by-token, then its citations. Parses the
+// backend's `data: {json}` SSE frames off a plain fetch stream (EventSource can't POST).
 export async function streamChat(
+  projectId: string,
   message: string,
   handlers: ChatHandlers = {},
   topK?: number,
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, top_k: topK ?? null }),
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ project_id: projectId, message, top_k: topK ?? null }),
     signal: handlers.signal,
   })
 

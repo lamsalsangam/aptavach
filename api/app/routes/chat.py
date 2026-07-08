@@ -10,7 +10,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.post("")
 async def chat(request: ChatRequest) -> StreamingResponse:
     return StreamingResponse(
-        stream_answer(request.message, request.top_k),
+        stream_answer(request.project_id, request.message, request.top_k),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

@@ -1,8 +1,16 @@
 // Mirrors the backend's pydantic schemas (api/app/schemas.py). This typed contract is what
 // keeps the UI and the API honest with each other.
 
+export interface Project {
+  id: string
+  name: string
+  created_at: string
+  document_count: number
+}
+
 export interface DocumentInfo {
   doc_id: string
+  project_id: string
   filename: string
   num_chunks: number
   size: number

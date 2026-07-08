@@ -1,36 +1,39 @@
-// Document library state: loads the indexed docs on mount, and exposes upload/delete with
-// optimistic updates so the sidebar feels instant.
+// A single project's documents (server-side). Loads on project change; optimistic upload/delete.
 import { useEffect, useState } from 'react'
 
 import { deleteDocument, listDocuments, uploadDocument } from '@/lib/api'
 import type { DocumentInfo } from '@/lib/api'
 
-export function useDocuments() {
+export function useDocuments(projectId: string | null) {
   const [documents, setDocuments] = useState<DocumentInfo[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function refresh() {
-    setIsLoading(true)
-    try {
-      setDocuments(await listDocuments())
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load documents.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
-    void refresh()
-  }, [])
+    if (!projectId) {
+      setDocuments([])
+      return
+    }
+    const controller = new AbortController()
+    setIsLoading(true)
+    listDocuments(projectId, controller.signal)
+      .then(setDocuments)
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : 'Failed to load documents.')
+        }
+      })
+      .finally(() => setIsLoading(false))
+    return () => controller.abort()
+  }, [projectId])
 
   async function upload(file: File) {
+    if (!projectId) return
     setError(null)
     setIsUploading(true)
     try {
-      const info = await uploadDocument(file)
+      const info = await uploadDocument(projectId, file)
       setDocuments((prev) => [info, ...prev])
       return info
     } catch (err) {
@@ -52,5 +55,5 @@ export function useDocuments() {
     }
   }
 
-  return { documents, isLoading, isUploading, error, refresh, upload, remove }
+  return { documents, isLoading, isUploading, error, upload, remove }
 }
