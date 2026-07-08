@@ -121,7 +121,7 @@ wheels = [
 ]
 
 [[package]]
-name = "api"
+name = "aptavach-api"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
@@ -131,6 +131,10 @@ dependencies = [
     { name = "llama-index-llms-ollama" },
     { name = "llama-index-readers-file" },
     { name = "llama-index-vector-stores-qdrant" },
+]
+
+[package.dev-dependencies]
+dev = [
     { name = "ruff" },
 ]
 
@@ -142,8 +146,10 @@ requires-dist = [
     { name = "llama-index-llms-ollama", specifier = ">=0.10.1" },
     { name = "llama-index-readers-file", specifier = ">=0.6.0" },
     { name = "llama-index-vector-stores-qdrant", specifier = ">=0.10.2" },
-    { name = "ruff", specifier = ">=0.15.20" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.15.20" }]
 
 [[package]]
 name = "attrs"
