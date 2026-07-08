@@ -143,6 +143,12 @@ aptavach/
 - Cloud-provider adapters (Gemini / Claude / OpenAI) behind the existing `.env` switch
 - Optional backend persistence for chat history (cross-device)
 
+## Acknowledgements
+
+Aptavach was designed and built collaboratively with **[Claude](https://claude.com)** (Anthropic),
+using **Claude Code** — from the initial architecture and tech-stack decisions through the backend
+RAG pipeline, the UI, and this documentation.
+
 ## License
 
 [MIT](LICENSE) © 2026 Sangam Lamsal
