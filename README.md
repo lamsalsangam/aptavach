@@ -66,27 +66,34 @@ ollama pull qwen2.5:7b
 ollama pull bge-m3
 ```
 
-**2. Backend:**
+**2. Install dependencies** (once):
 
 ```bash
-cd api
-uv sync
-uv run fastapi dev app/main.py     # http://127.0.0.1:8000  ·  API docs at /docs
+cd api && uv sync && cd ..        # backend  (Python 3.14 via uv)
+cd web && bun install && cd ..    # frontend
 ```
 
-**3. Frontend** (new terminal):
+**3. Run it** — from the repo **root**, this starts the backend **and** frontend together:
 
 ```bash
-cd web
-bun install
-bun dev                            # http://localhost:5173
+bun run up        # backend + frontend in one terminal (Ollama must be running)
+bun run up:all    # ...also starts `ollama serve`
 ```
 
-> **Or run both at once:** from the repo root, **`bun run up`** starts the backend **and**
-> frontend together in one terminal (it auto-fetches a tiny `concurrently` helper on first run;
-> Ollama must be running). Use **`bun run up:all`** to launch Ollama too.
+`bun run up` auto-fetches a tiny `concurrently` helper on first run; Ctrl+C stops everything.
+Then open **http://localhost:5173**, create a project, add a source, and ask a question.
 
-Open **http://localhost:5173**, create a project, add a source, and ask a question.
+<details>
+<summary><b>Prefer to run the services separately?</b></summary>
+
+```bash
+# Backend  → http://127.0.0.1:8000  (Swagger UI at /docs)
+cd api && uv run fastapi dev app/main.py
+
+# Frontend → http://localhost:5173
+cd web && bun dev
+```
+</details>
 
 ## Configuration
 
@@ -99,6 +106,37 @@ Highlights:
 | `APTAVACH_LLM_PROVIDER` / `APTAVACH_EMBED_PROVIDER` | swap vendors (add an adapter in `api/app/providers/`) |
 | `APTAVACH_QDRANT_LOCATION` | `local` (embedded) or `server` (Qdrant Cloud/self-host) |
 | `APTAVACH_CHUNK_SIZE` / `APTAVACH_SIMILARITY_TOP_K` | retrieval tuning |
+
+## Models
+
+The defaults — **Qwen2.5 7B** (generation) and **bge-m3** (embeddings) — were chosen for one
+honest reason: they're **free, run fully locally, and fit modest hardware**. They aren't the newest
+or largest models around; they're simply what runs comfortably without a beefy GPU or any paid API.
+Aptavach is model-agnostic, so if your machine (or budget) can do better, use something better.
+
+### Use a different Ollama model
+
+Pull any model from the [Ollama library](https://ollama.com/library), then point Aptavach at it in
+`api/.env` and restart the backend:
+
+```env
+# Generation — a stronger model if you have the VRAM, or a smaller one for weaker hardware
+APTAVACH_LLM_MODEL=qwen3:8b
+# Embeddings — see the caveat below before changing this
+APTAVACH_EMBED_MODEL=bge-m3
+```
+
+- **More capable:** `qwen3:8b`, `llama3.1:8b`, `gemma3`, … (need more VRAM/RAM).
+- **Lighter:** `qwen2.5:3b`, `llama3.2:3b` for machines that struggle with a 7B model.
+- **Embeddings caveat:** a different embedder produces a different (often differently-sized) vector
+  space, so the existing index is incompatible. Start fresh — stop the backend, delete
+  `api/storage/`, restart — then re-upload your documents.
+
+### Use a cloud model instead
+
+Every model sits behind a provider interface (`api/app/providers/`), so you can swap Ollama for a
+hosted API (Claude, GPT, Gemini, …): set `APTAVACH_LLM_PROVIDER` + your key in `.env`, and add a
+small adapter in `providers/llm.py`. See **[CLAUDE.md](CLAUDE.md)** for the exact steps.
 
 ## How it works
 
