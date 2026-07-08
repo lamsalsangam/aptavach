@@ -1,34 +1,30 @@
-# React + TypeScript + Vite
+# Aptavach — Frontend (`web/`)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Vite + React 19 + TypeScript + Tailwind v4 + shadcn/ui, run with **Bun**. This is the UI only —
+all RAG logic lives in the backend (`../api`). See the root **[README](../README.md)** for setup
+and **[CLAUDE.md](../CLAUDE.md)** for architecture and conventions.
 
-Currently, two official plugins are available:
+## Commands
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+bun install     # install dependencies
+bun dev         # dev server → http://localhost:5173
+bun run build   # typecheck + production build
+bun run lint    # Oxlint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Requires the **backend running** (default `http://127.0.0.1:8000`) and **Ollama** up.
+
+## Structure
+
+- `src/lib/api/` — the only code that talks to the backend (REST + SSE). Override the base URL
+  with the `VITE_API_URL` env var.
+- `src/hooks/` — `useProjects`, `useDocuments`, `useChats` (chat history in `localStorage`).
+- `src/components/` — `chat/`, `sidebar/`, `documents/`, and shared UI.
+- `src/index.css` — Tailwind entry + theme tokens (`:root` light, `.dark` dark) + keyframes.
+
+## Notes
+
+- React Compiler is enabled — avoid manual `useMemo`/`useCallback`.
+- TypeScript is strict (`verbatimModuleSyntax`, `erasableSyntaxOnly`): use `import type`, and no
+  `enum`/`namespace`. Path alias `@/*` → `src/*`.

@@ -1,0 +1,14 @@
+{
+  "name": "aptavach",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Aptavach — a local-first, source-grounded RAG assistant.",
+  "license": "MIT",
+  "scripts": {
+    "up": "bunx concurrently -k -n api,web -c blue,magenta \"cd api && uv run uvicorn app.main:app --reload\" \"cd web && bun dev\"",
+    "up:all": "bunx concurrently -k -n ollama,api,web -c yellow,blue,magenta \"ollama serve\" \"cd api && uv run uvicorn app.main:app --reload\" \"cd web && bun dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.3"
+  }
+}
