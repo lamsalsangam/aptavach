@@ -1,0 +1,28 @@
+# --- Node / frontend (web/) ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# --- Python / backend (api/) ---
+__pycache__/
+*.py[oc]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# --- Aptavach runtime data (never commit uploads or the vector store) ---
+storage/
+
+# --- Secrets ---
+.env
+*.env
+!*.env.example
+
+# --- Editor / OS ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
