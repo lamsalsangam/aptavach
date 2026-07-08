@@ -41,8 +41,8 @@ class Settings(BaseSettings):
     collection_name: str = "aptavach"
 
     # --- Retrieval / chunking ---
-    chunk_size: int = 1024
-    chunk_overlap: int = 128
+    chunk_size: int = 512
+    chunk_overlap: int = 80
     similarity_top_k: int = 5
 
     @property

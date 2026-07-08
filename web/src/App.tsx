@@ -17,6 +17,18 @@ import { useProjects } from '@/hooks/useProjects'
 
 const COLLAPSE_KEY = 'aptavach:sidebar-collapsed'
 
+type SegmenterLike = { segment: (input: string) => Iterable<{ segment: string }> }
+type SegmenterCtor = new (locales?: string, options?: { granularity: 'grapheme' }) => SegmenterLike
+
+// Split into visual units — keeps Devanagari conjuncts (e.g. प्त) intact, unlike a naive split.
+function splitGraphemes(text: string): string[] {
+  const Segmenter = (Intl as { Segmenter?: SegmenterCtor }).Segmenter
+  if (Segmenter) {
+    return Array.from(new Segmenter(undefined, { granularity: 'grapheme' }).segment(text), (p) => p.segment)
+  }
+  return Array.from(text)
+}
+
 function App() {
   const projects = useProjects()
   const documents = useDocuments(projects.currentProjectId)
@@ -56,8 +68,31 @@ function App() {
 
   if (projects.isLoading) {
     return (
-      <div className="grid h-dvh place-items-center bg-background text-sm text-muted-foreground">
-        Loading…
+      <div className="flex h-dvh flex-col items-center justify-center gap-2 bg-background text-foreground">
+        {/* Sanskrit: wave left → right */}
+        <h1 className="font-serif text-3xl font-medium tracking-tight">
+          {splitGraphemes('आप्तवच').map((grapheme, index) => (
+            <span
+              key={index}
+              className="inline-block"
+              style={{ animation: 'aptavach-wave 1.4s ease-in-out infinite', animationDelay: `${index * 110}ms` }}
+            >
+              {grapheme}
+            </span>
+          ))}
+        </h1>
+        {/* English: wave right → left */}
+        <p className="text-[11px] font-medium tracking-[0.25em] text-muted-foreground uppercase">
+          {'Aptavach'.split('').map((letter, index, arr) => (
+            <span
+              key={index}
+              className="inline-block"
+              style={{ animation: 'aptavach-wave 1.4s ease-in-out infinite', animationDelay: `${(arr.length - 1 - index) * 110}ms` }}
+            >
+              {letter}
+            </span>
+          ))}
+        </p>
       </div>
     )
   }

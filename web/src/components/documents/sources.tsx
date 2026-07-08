@@ -4,6 +4,7 @@ import { FileText, Loader2, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { DocumentInfo } from '@/lib/api'
+import { DocumentPreview } from './document-preview'
 
 interface SourcesProps {
   documents: DocumentInfo[]
@@ -24,6 +25,7 @@ function formatBytes(bytes: number): string {
 export function Sources({ documents, isLoading, isUploading, error, disabled, onUpload, onRemove }: SourcesProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<DocumentInfo | null>(null)
 
   function handleFiles(files: FileList | null) {
     if (files && files.length > 0) onUpload(files[0])
@@ -78,21 +80,25 @@ export function Sources({ documents, isLoading, isUploading, error, disabled, on
         ) : (
           <ul className="space-y-0.5">
             {documents.map((doc) => (
-              <li
-                key={doc.doc_id}
-                className="group flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted"
-              >
-                <FileText className="size-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium">{doc.filename}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {doc.num_chunks} chunks · {formatBytes(doc.size)}
-                  </p>
-                </div>
+              <li key={doc.doc_id} className="group flex items-center gap-1 rounded-lg pr-1 transition-colors hover:bg-muted">
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(doc)}
+                  title="Preview / open"
+                  className="flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pl-2 text-left"
+                >
+                  <FileText className="size-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium">{doc.filename}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {doc.num_chunks} chunks · {formatBytes(doc.size)}
+                    </p>
+                  </div>
+                </button>
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="opacity-0 transition-opacity group-hover:opacity-100"
+                  className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
                   onClick={() => onRemove(doc.doc_id)}
                   aria-label={`Remove ${doc.filename}`}
                   title="Remove"
@@ -105,6 +111,8 @@ export function Sources({ documents, isLoading, isUploading, error, disabled, on
         )}
         {error && <p className="px-2 py-1 text-xs text-destructive">{error}</p>}
       </div>
+
+      <DocumentPreview doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
   )
 }

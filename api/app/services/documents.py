@@ -104,6 +104,27 @@ def list_documents(project_id: str) -> list[dict]:
     return sorted(docs, key=lambda d: d["uploaded_at"], reverse=True)
 
 
+def get_document(doc_id: str) -> dict | None:
+    return _load_registry().get(doc_id)
+
+
+def get_document_path(doc_id: str) -> Path | None:
+    entry = _load_registry().get(doc_id)
+    if entry is None:
+        return None
+    path = get_settings().uploads_dir / f"{doc_id}__{entry['filename']}"
+    return path if path.exists() else None
+
+
+def get_document_text(doc_id: str) -> str | None:
+    """Re-extract the text of a stored document (for preview) using the same reader as ingest."""
+    path = get_document_path(doc_id)
+    if path is None:
+        return None
+    documents = SimpleDirectoryReader(input_files=[str(path)]).load_data()
+    return "\n\n".join(doc.get_content() for doc in documents)
+
+
 def delete_document(doc_id: str) -> bool:
     with _lock:
         registry = _load_registry()

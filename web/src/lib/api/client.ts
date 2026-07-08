@@ -64,6 +64,23 @@ export function deleteDocument(docId: string): Promise<{ deleted: string }> {
   )
 }
 
+// A plain URL to the stored original file — open it in a new tab to view/download.
+export function documentFileUrl(docId: string): string {
+  return `${API_BASE}/documents/${docId}/file`
+}
+
+export interface DocumentContent {
+  doc_id: string
+  filename: string
+  text: string
+}
+
+export function getDocumentContent(docId: string, signal?: AbortSignal): Promise<DocumentContent> {
+  return fetch(`${API_BASE}/documents/${docId}/content`, { signal }).then((r) =>
+    toJson<DocumentContent>(r),
+  )
+}
+
 // --- Chat ---
 
 export interface ChatHandlers {

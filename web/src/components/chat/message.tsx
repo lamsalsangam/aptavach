@@ -1,12 +1,19 @@
+import { useState } from 'react'
+import { Check, Copy } from 'lucide-react'
+
+import { Markdown } from '@/components/markdown'
 import type { Citation } from '@/lib/api'
 import type { ChatMessage } from '@/lib/types'
 
 export function MessageItem({ message }: { message: ChatMessage }) {
   if (message.role === 'user') {
     return (
-      <div className="flex justify-end">
+      <div className="group/msg flex flex-col items-end gap-1">
         <div className="max-w-[80%] rounded-2xl bg-muted px-4 py-2.5 text-[15px] leading-7 wrap-break-word whitespace-pre-wrap">
           {message.content}
+        </div>
+        <div className="opacity-0 transition-opacity group-hover/msg:opacity-100 max-md:opacity-100">
+          <CopyButton text={message.content} />
         </div>
       </div>
     )
@@ -15,20 +22,43 @@ export function MessageItem({ message }: { message: ChatMessage }) {
   const showThinking = message.pending && !message.content
 
   return (
-    <div className="flex flex-col gap-3">
-      {showThinking ? (
-        <ThinkingDots />
-      ) : (
-        <div className="text-[15px] leading-7 wrap-break-word whitespace-pre-wrap text-foreground">
-          {message.content}
-          {message.pending && (
-            <span className="ml-0.5 inline-block h-[1.1em] w-0.75 translate-y-0.5 animate-pulse rounded-full bg-foreground/70 align-middle" />
-          )}
+    <div className="group/msg flex flex-col gap-3">
+      {showThinking ? <ThinkingDots /> : <Markdown>{message.content}</Markdown>}
+
+      {!showThinking && !message.pending && (
+        <div className="opacity-0 transition-opacity group-hover/msg:opacity-100 max-md:opacity-100">
+          <CopyButton text={message.content} />
         </div>
       )}
 
       {message.citations && message.citations.length > 0 && <Citations citations={message.citations} />}
     </div>
+  )
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // Clipboard unavailable (e.g. a non-secure context) — ignore.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={copied ? 'Copied' : 'Copy'}
+      aria-label="Copy message"
+      className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+    </button>
   )
 }
 

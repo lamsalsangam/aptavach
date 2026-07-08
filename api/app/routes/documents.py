@@ -1,4 +1,6 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 
 from ..schemas import DocumentInfo, IngestResponse
 from ..services import documents as document_service
@@ -27,3 +29,22 @@ def delete_document(doc_id: str) -> dict:
     if not document_service.delete_document(doc_id):
         raise HTTPException(status_code=404, detail="Document not found")
     return {"deleted": doc_id}
+
+
+@router.get("/documents/{doc_id}/file")
+def download_document(doc_id: str) -> FileResponse:
+    entry = document_service.get_document(doc_id)
+    path = document_service.get_document_path(doc_id)
+    if entry is None or path is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    # inline so PDFs/text open in the browser tab (other types download).
+    return FileResponse(path, filename=entry["filename"], content_disposition_type="inline")
+
+
+@router.get("/documents/{doc_id}/content")
+async def document_content(doc_id: str) -> dict:
+    entry = document_service.get_document(doc_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    text = await run_in_threadpool(document_service.get_document_text, doc_id)
+    return {"doc_id": doc_id, "filename": entry["filename"], "text": text or ""}
