@@ -9,6 +9,6 @@
     "up:all": "bunx concurrently -k -n ollama,api,web -c yellow,blue,magenta \"ollama serve\" \"cd api && uv run uvicorn app.main:app --reload\" \"cd web && bun dev\""
   },
   "devDependencies": {
-    "concurrently": "^9.2.3"
+    "concurrently": "^9.2.4"
   }
 }
